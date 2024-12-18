@@ -1,10 +1,18 @@
 {
   "scripts": {
-    "dev": "vite",
+    "dev": "nodemon ./src/server.gleam",
     "build": "vite build"
   },
   "dependencies": {
+    "@tiptap/core": "^2.10.3",
+    "@tiptap/extension-collaboration": "^2.10.3",
+    "@tiptap/pm": "^2.10.3",
+    "@tiptap/starter-kit": "^2.10.3",
+    "js-base64": "^3.7.7",
     "vite": "^5.4.11",
-    "vite-gleam": "^0.4.3"
+    "vite-gleam": "^0.4.3",
+    "vite-plugin-singlefile": "^2.1.0",
+    "y-indexeddb": "^9.0.12",
+    "yjs": "^13.6.20"
   }
 }

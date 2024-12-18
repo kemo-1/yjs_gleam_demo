@@ -1,0 +1,9 @@
+{
+    "verbose": true,
+    "execMap": {
+        "gleam": "npm run build && gleam run"
+    },
+    "ignore": [
+        "**/build/**"
+    ]
+}
