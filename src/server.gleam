@@ -147,7 +147,6 @@ pub fn main() {
 
                 // Send this new client to the pubsub
                 process.send(pubsub, Subscribe(client))
-
                 // Define on what messages the SSE loop function should run:
                 // on every message send to the `client` subject
                 let selector =
