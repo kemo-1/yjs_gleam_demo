@@ -3,6 +3,9 @@
     "execMap": {
         "gleam": "npm run build && gleam run"
     },
+    "watch": [
+        "**/src/**"
+    ],
     "ignore": [
         "**/build/**"
     ]

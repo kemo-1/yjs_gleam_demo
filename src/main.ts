@@ -28,7 +28,7 @@ const MY_COLOR = colours[Math.floor(Math.random() * colours.length)];
 let document_name = "my-document_name"
 
 const yDoc = new Y.Doc();
-const provider = new WebrtcProvider(document_name, yDoc, { maxConns: 70 + Math.floor(Math.random() * 70) })
+// const provider = new WebrtcProvider(document_name, yDoc, { maxConns: 70 + Math.floor(Math.random() * 70) })
 // const provider = new YPartyKitProvider(
 //   "localhost:1999",
 //   document_name,
@@ -65,13 +65,13 @@ const editor = new Editor({
     Collaboration.configure({
         document: yDoc, // Configure Y.Doc for collaboration
     }),
-    CollaborationCursor.configure({
-        provider: provider,
-        user: {
-            name: "cutie_number" + Math.floor(Math.random() * 20),
-            color: MY_COLOR,
-        },
-    }),
+        // CollaborationCursor.configure({
+        //     provider: provider,
+        //     user: {
+        //         name: "cutie_number" + Math.floor(Math.random() * 20),
+        //         color: MY_COLOR,
+        //     },
+        // }),
     ],
 
 })

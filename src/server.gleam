@@ -2,6 +2,7 @@
 
 import gleam/bit_array
 import gleam/bytes_tree
+import gleam/dynamic
 import gleam/erlang/process.{type Subject}
 import gleam/function
 import gleam/http
@@ -14,6 +15,7 @@ import gleam/result
 import gleam/string_tree
 import mist
 import simplifile
+import sqlight
 
 // fn cors() {
 //   cors_builder.new()
@@ -74,6 +76,15 @@ fn new_response(status: Int, body: String) {
 }
 
 pub fn main() {
+  use conn <- sqlight.with_connection("file:db.db")
+  let document_decoder = dynamic.tuple2(dynamic.string, dynamic.string)
+
+  let sql =
+    "create table if not exists documents (name PRIMARY KEY, value text);
+    insert or ignore into documents (name, value) VALUES ('document', '');
+"
+  let assert Ok(Nil) = sqlight.exec(sql, conn)
+
   // Start the pubsub with an empty list of clients in its own process
   let assert Ok(pubsub) = actor.start([], pubsub_loop)
 
@@ -81,8 +92,6 @@ pub fn main() {
     mist.new(
       // HTTP server handler: it takes a request and returns a response
       fn(request) {
-        // use request <- cors_builder.mist_middleware(req, cors())
-        // mist.ok()
         // Basic router matching the request method and path of the request
         let response = case request.method, request.path {
           // On 'GET /', read the index.html file and return it
@@ -107,24 +116,26 @@ pub fn main() {
               |> mist.read_body(99_999_999_999)
               |> result.replace_error("Could not read request body."),
             )
-            // Transform the bytes into a string
-            // use message <- result.try(
-            // request.body 
-            // |> io.debug 
-            // |> bit_array.base64_encode(True)
-            // |> bit_array.base64_decode
-            // |> bit_array.to
+            let sql =
+              "
+  select name,value from documents
+  where name = 'document'
+  "
+            let assert Ok([update]) =
+              sqlight.query(
+                sql,
+                on: conn,
+                with: [],
+                expecting: document_decoder,
+              )
+            let #(_, update) = update
+            process.send(pubsub, Publish(update))
 
-            //  |> bit_array.to_string
-            //   |> result.replace_error(
-            //   "Could not convert request body to string.",
-            // )
-            // ,
-            // )
             let message = request.body |> bit_array.base64_encode(True)
-            // |> io.debug
-            // |> bit_array.base64_encode(True)
-            // |> bit_array.base64_decode
+            let sql = "insert or replace into documents (name, value) values 
+  ('document', '" <> message <> "' )"
+            // sqlight.query(sql,conn,[sqlight.text(message)],)
+            let assert Ok(Nil) = sqlight.exec(sql, conn)
 
             // Send the message to the pubsub
             process.send(pubsub, Publish(message))
@@ -152,6 +163,20 @@ pub fn main() {
                 let selector =
                   process.new_selector()
                   |> process.selecting(client, function.identity)
+                let sql =
+                  "
+  select name,value from documents
+  where name = 'document'
+  "
+                let assert Ok([update]) =
+                  sqlight.query(
+                    sql,
+                    on: conn,
+                    with: [],
+                    expecting: document_decoder,
+                  )
+                let #(_, update) = update
+                process.send(pubsub, Publish(update))
 
                 // Start the loop with the client as state and a selector
                 // pointing to the client subject
