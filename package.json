@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "dev": "nodemon ./src/server.gleam",
+    "dev": "nodemon ./src/server.gleam -e ts,gleam ",
     "start": "gleam run",
     "build": "vite build",
     "zrok": "zrok share public http://localhost:3000",

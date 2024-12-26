@@ -1,6 +1,7 @@
 {
     "verbose": true,
     "execMap": {
+        "ts": "npm run build && gleam run",
         "gleam": "npm run build && gleam run"
     },
     "watch": [

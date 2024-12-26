@@ -34,27 +34,49 @@ const yDoc = new Y.Doc();
 //   document_name,
 //   yDoc
 // );
-const source = new EventSource('/sse');
-source.onmessage = (event) => {
-
-    // console.log("yo are you getting this", event.data);
+const Docsource = new EventSource('/doc');
+Docsource.onmessage = (event) => {
     const binaryEncoded = toUint8Array(event.data)
     Y.applyUpdate(yDoc, binaryEncoded)
-
 };
-new IndexeddbPersistence(document_name, yDoc)
+import * as awarenessProtocol from 'y-protocols/awareness.js'
+let awareness = new awarenessProtocol.Awareness(yDoc)
 
+let provider = new IndexeddbPersistence(document_name, yDoc)
+//@ts-ignore
+provider.awareness = awareness
+
+
+awareness.on('change', ({ added, updated, removed }) => {
+    const changedClients = added.concat(updated).concat(removed)
+    let body = awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients)
+    console.log(body)
+    fetch('/awareness', { method: 'POST', body });
+
+})
+awareness.on('update', ({ added, updated, removed }) => {
+    const changedClients = added.concat(updated).concat(removed)
+    let body = awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients)
+    console.log(body)
+    fetch('/awareness', { method: 'POST', body });
+
+})
+const AwarenessSource = new EventSource('/awareness');
+AwarenessSource.onmessage = (event) => {
+    const binaryEncoded = toUint8Array(event.data)
+    //@ts-ignore
+    awarenessProtocol.applyAwarenessUpdate(provider.awareness, binaryEncoded, "")
+};
 yDoc.on("update", doc => {
     const documentState = Y.encodeStateAsUpdate(yDoc) // is a Uint8Array
     // Transform Uint8Array to a Base64-String
-    console.log("documentState", documentState)
+
     const base64Encoded = fromUint8Array(documentState)
-    console.log("base64Encoded", base64Encoded)
 
     // Transform Base64-String back to an Uint8Array
     const binaryEncoded = toUint8Array(base64Encoded)
     let body = documentState
-    fetch('/post', { method: 'POST', body });
+    fetch('/doc', { method: 'POST', body });
 })
 const editor = new Editor({
     element: document.querySelector('.element')!,
@@ -65,13 +87,13 @@ const editor = new Editor({
     Collaboration.configure({
         document: yDoc, // Configure Y.Doc for collaboration
     }),
-        // CollaborationCursor.configure({
-        //     provider: provider,
-        //     user: {
-        //         name: "cutie_number" + Math.floor(Math.random() * 20),
-        //         color: MY_COLOR,
-        //     },
-        // }),
+    CollaborationCursor.configure({
+        provider: provider,
+        user: {
+            name: "cutie_number" + Math.floor(Math.random() * 20),
+            color: MY_COLOR,
+        },
+    }),
     ],
 
 })
