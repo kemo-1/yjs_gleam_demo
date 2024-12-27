@@ -67,7 +67,7 @@ fn new_response(status: Int, body: String) {
 }
 
 pub fn main() {
-  use conn <- sqlight.with_connection("file:db.db")
+  use conn <- sqlight.with_connection("file:database/db.sqlite")
   let document_decoder = dynamic.tuple2(dynamic.string, dynamic.string)
 
   let sql =
