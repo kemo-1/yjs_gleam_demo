@@ -86,14 +86,7 @@ fn handle_message(
             Some(table) ->
               case uset.insert(table, [#("doc", message)]) {
                 True -> {
-                  io.println("document have been saved")
-                  case uset.tab2file(table, "documents", False, False, False) {
-                    Ok(_) -> io.println("document have been saved")
-                    Error(err) -> {
-                      io.debug(err)
-                      io.println("Error saving to disk  been saved")
-                    }
-                  }
+                  io.println("document have been saved in memory")
                 }
                 _ -> Nil
               }
