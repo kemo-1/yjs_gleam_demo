@@ -142,6 +142,10 @@
 // }
 import actors/websocket_actor
 import artifacts/pubsub.{type Channel, Awareness, Doc}
+import bravo
+import bravo/uset
+import decode
+import gleam/dynamic
 
 import chip
 import gleam/bytes_tree
@@ -150,6 +154,7 @@ import gleam/http/request
 import gleam/http/response
 
 import gleam/io
+import gleam/option.{None, Some}
 
 // import gleam/option.{type Option, None, Some}
 
@@ -163,6 +168,48 @@ fn new_response(status: Int, body: String) {
 }
 
 pub fn main() {
+  //   use conn <- sqlight.with_connection("file:database/db.sqlite")
+  //   let document_decoder = dynamic.tuple2(dynamic.string, dynamic.string)
+
+  //   let sql =
+  //     "create table if not exists documents (name PRIMARY KEY, value text);
+  //     insert or ignore into documents (name, value) VALUES ('document', '');
+  // "
+  //   let assert Ok(Nil) = sqlight.exec(sql, conn)
+  // uset.insert(table, [#("doc", "")])
+  // let table = case
+  //   uset.file2tab("documents", False, fn(table) {
+  //     table |> dynamic.tuple2(dynamic.string, dynamic.string)
+  //   })
+  // {
+  //   Ok(table) -> Some(table)
+  //   Error(_) ->
+  //     case uset.new("doc", 1, bravo.Public) {
+  //       Ok(created_new_table) -> Some(created_new_table)
+  //       Error(_) -> None
+  //     }
+  // }
+
+  // let table = case
+  //   uset.file2tab(
+  //     "documents",
+  //     False,
+  //     // fn(dynamic.Dynamic) -> Result(#(String, String)
+  //     fn(table) { table |> dynamic.tuple2(dynamic.string, dynamic.string) },
+  //   )
+  // {
+  //   Ok(table) -> table
+  //   Error(_) -> {
+  //     case uset.new("doc", 1, bravo.Public) {
+  //       Ok(table) -> table
+  //       Error(_) -> panic
+  //     }
+  //   }
+  // }
+
+  // io.print(object.0 <> ", " <> object.1)
+  // "Hello, world!"
+  let assert Ok(table) = uset.new("doc", 1, bravo.Public)
   let assert Ok(pubsub) = pubsub.start()
   let assert Ok(_) =
     mist.new(fn(request) {
@@ -175,10 +222,10 @@ pub fn main() {
           Ok(new_response(200, index))
         }
         ["doc"] -> {
-          Ok(websocket_actor.start(request, pubsub, Doc))
+          Ok(websocket_actor.start(request, pubsub, Doc, Some(table)))
         }
         ["awareness"] -> {
-          Ok(websocket_actor.start(request, pubsub, Awareness))
+          Ok(websocket_actor.start(request, pubsub, Awareness, None))
         }
         _ -> {
           new_response(404, "Not found") |> Ok

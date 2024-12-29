@@ -1,7 +1,9 @@
 import actors/actor_messages.{
   type CustomWebsocketMessage, Connect, Disconnect, SendToAll,
 }
-import artifacts/pubsub.{type Channel}
+import artifacts/pubsub.{type Channel, publish, subscribe}
+import bravo
+import bravo/uset.{type USet}
 import chip
 import gleam/erlang/process.{type Subject, Normal}
 import gleam/function
@@ -9,9 +11,8 @@ import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/io
 import gleam/list
-import gleam/option.{Some}
+import gleam/option.{type Option, None, Some}
 import gleam/otp/actor.{type Next, Stop}
-
 import mist.{
   type Connection, type ResponseData, type WebsocketConnection,
   type WebsocketMessage, Custom, Text,
@@ -25,6 +26,7 @@ pub opaque type WebsocketActorState {
   WebsocketActorState(
     ws_subject: Subject(chip.Message(CustomWebsocketMessage, Channel)),
     channel: Channel,
+    table: Option(USet(#(String, String))),
   )
 }
 
@@ -32,18 +34,31 @@ pub fn start(
   req: Request(Connection),
   pubsub,
   channel: Channel,
+  table: Option(USet(#(String, String))),
 ) -> Response(ResponseData) {
   mist.websocket(
     request: req,
-    on_init: fn(_) {
+    on_init: fn(connection) {
       io.println("New connection initialized")
-
       let ws_subject = process.new_subject()
       let new_selector =
         process.new_selector()
         |> process.selecting(ws_subject, function.identity)
-      chip.register(pubsub, channel, ws_subject)
-      let state = WebsocketActorState(ws_subject: pubsub, channel: channel)
+      subscribe(pubsub, channel, ws_subject)
+      let state = WebsocketActorState(ws_subject: pubsub, channel:, table:)
+
+      case table {
+        Some(doc_table) -> {
+          case uset.lookup(doc_table, "doc") {
+            Error(_) -> Nil
+            Ok(doc_table) -> {
+              let #(_, doc) = doc_table
+              send_client_text(connection, doc)
+            }
+          }
+        }
+        None -> Nil
+      }
 
       #(state, Some(new_selector))
     },
@@ -63,26 +78,39 @@ fn handle_message(
   case message {
     Custom(message) ->
       case message {
-        Connect(subject) -> {
-          //   send_client_text(connection, "joined")
-
+        Connect(_subject) -> {
           state |> actor.continue
         }
         SendToAll(message) -> {
+          case state.table {
+            Some(table) ->
+              case uset.insert(table, [#("doc", message)]) {
+                True -> {
+                  io.println("document have been saved")
+                  case uset.tab2file(table, "documents", False, False, False) {
+                    Ok(_) -> io.println("document have been saved")
+                    Error(err) -> {
+                      io.debug(err)
+                      io.println("Error saving to disk  been saved")
+                    }
+                  }
+                }
+                _ -> Nil
+              }
+            None -> Nil
+          }
+
           send_client_text(connection, message)
+
           state |> actor.continue
         }
         Disconnect -> {
-          state |> actor.continue
+          Stop(Normal)
         }
       }
 
     Text(value) -> {
-      chip.members(state.ws_subject, state.channel, 50)
-      |> list.each(fn(client) {
-        SendToAll(message: value)
-        |> process.send(client, _)
-      })
+      publish(state.ws_subject, state.channel, SendToAll(message: value))
 
       state |> actor.continue
     }

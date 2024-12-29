@@ -18,11 +18,7 @@ let document_name = "my-document_name"
 const yDoc = new Y.Doc();
 let awareness = new awarenessProtocol.Awareness(yDoc)
 
-// const Docsource = new EventSource('/doc');
-// Docsource.onmessage = (event) => {
-//     const binaryEncoded = toUint8Array(event.data)
-//     Y.applyUpdate(yDoc, binaryEncoded)
-// };
+
 
 
 let provider = new IndexeddbPersistence(document_name, yDoc)
@@ -30,8 +26,8 @@ let provider = new IndexeddbPersistence(document_name, yDoc)
 provider.awareness = awareness
 
 // Create and maintain a persistent WebSocket connection
-const DocSocket = new WebSocket("wss://" + location.host + "/doc");
-const AwarenessSocket = new WebSocket("wss://" + location.host + "/awareness");
+const DocSocket = new WebSocket("ws://" + location.host + "/doc");
+const AwarenessSocket = new WebSocket("ws://" + location.host + "/awareness");
 
 // Event listener for WebSocket open event
 DocSocket.onopen = (event) => {
