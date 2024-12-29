@@ -1,6 +1,7 @@
 import actors/actor_messages.{
   type CustomWebsocketMessage, Connect, Disconnect, SendToAll,
 }
+import artifacts/pubsub.{type Channel}
 import chip
 import gleam/erlang/process.{type Subject, Normal}
 import gleam/function
@@ -16,21 +17,22 @@ import mist.{
   type WebsocketMessage, Custom, Text,
 }
 
-pub type Channel {
-  General
-}
-
 pub type Event {
-  Event(id: Int, message: String)
+  Event(message: String)
 }
 
 pub opaque type WebsocketActorState {
   WebsocketActorState(
     ws_subject: Subject(chip.Message(CustomWebsocketMessage, Channel)),
+    channel: Channel,
   )
 }
 
-pub fn start(req: Request(Connection), pubsub) -> Response(ResponseData) {
+pub fn start(
+  req: Request(Connection),
+  pubsub,
+  channel: Channel,
+) -> Response(ResponseData) {
   mist.websocket(
     request: req,
     on_init: fn(_) {
@@ -40,8 +42,8 @@ pub fn start(req: Request(Connection), pubsub) -> Response(ResponseData) {
       let new_selector =
         process.new_selector()
         |> process.selecting(ws_subject, function.identity)
-      chip.register(pubsub, General, ws_subject)
-      let state = WebsocketActorState(ws_subject: pubsub)
+      chip.register(pubsub, channel, ws_subject)
+      let state = WebsocketActorState(ws_subject: pubsub, channel: channel)
 
       #(state, Some(new_selector))
     },
@@ -62,9 +64,7 @@ fn handle_message(
     Custom(message) ->
       case message {
         Connect(subject) -> {
-          //   let new_state = WebsocketActorState(ws_subject: subject)
-
-          send_client_text(connection, "joined")
+          //   send_client_text(connection, "joined")
 
           state |> actor.continue
         }
@@ -76,10 +76,11 @@ fn handle_message(
           state |> actor.continue
         }
       }
-    Text(text) -> {
-      chip.members(state.ws_subject, General, 50)
+
+    Text(value) -> {
+      chip.members(state.ws_subject, state.channel, 50)
       |> list.each(fn(client) {
-        SendToAll(message: text)
+        SendToAll(message: value)
         |> process.send(client, _)
       })
 
@@ -91,8 +92,8 @@ fn handle_message(
   }
 }
 
-fn send_client_text(connection: WebsocketConnection, string: String) {
-  let assert Ok(_) = mist.send_text_frame(connection, string)
+fn send_client_text(connection: WebsocketConnection, value: String) {
+  let assert Ok(_) = mist.send_text_frame(connection, value)
 
   Nil
 }

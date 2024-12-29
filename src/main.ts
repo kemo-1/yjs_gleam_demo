@@ -30,28 +30,46 @@ let provider = new IndexeddbPersistence(document_name, yDoc)
 provider.awareness = awareness
 
 // Create and maintain a persistent WebSocket connection
-const webSocket = new WebSocket("ws://" + location.host + "/ws");
+const DocSocket = new WebSocket("ws://" + location.host + "/doc");
+const AwarenessSocket = new WebSocket("ws://" + location.host + "/awareness");
 
 // Event listener for WebSocket open event
-webSocket.onopen = (event) => {
-    console.log("WebSocket connection established");
+DocSocket.onopen = (event) => {
+    console.log("DocSocket connection established");
 };
-webSocket.onmessage = function (event) {
-    console.log(event.data + " WebSocket message recived");
+AwarenessSocket.onopen = (event) => {
+    console.log("AwarenessSocket connection established");
+};
+DocSocket.onmessage = function (event) {
+    console.log(event.data + "DocSocket message recived");
 
     const binaryEncoded = toUint8Array(event.data)
     //@ts-ignore
     Y.applyUpdate(yDoc, binaryEncoded)
 };
+AwarenessSocket.onmessage = function (event) {
+    console.log(event.data + "AwarenessSocket message recived");
 
+    const binaryEncoded = toUint8Array(event.data)
+    //@ts-ignore
+    awarenessProtocol.applyAwarenessUpdate(provider.awareness, binaryEncoded, "")
+
+
+};
 // Event listener for WebSocket error event
-webSocket.onerror = (error) => {
-    console.error("WebSocket error:", error);
+DocSocket.onerror = (error) => {
+    console.error("DocSocket error:", error);
+};
+AwarenessSocket.onerror = (error) => {
+    console.error("AwarenessSocket error:", error);
 };
 
 // Event listener for WebSocket close event
-webSocket.onclose = (event) => {
-    console.log("WebSocket connection closed:", event);
+DocSocket.onclose = (event) => {
+    console.log("DocSocket connection closed:", event);
+};
+AwarenessSocket.onclose = (event) => {
+    console.log("AwarenessSocket connection closed:", event);
 };
 
 // Set up the awareness update listener
@@ -59,27 +77,28 @@ yDoc.on("update", doc => {
     const documentState = Y.encodeStateAsUpdate(yDoc) // is a Uint8Array
     const binaryEncoded = fromUint8Array(documentState)
 
-    if (webSocket.readyState === WebSocket.OPEN) {
+    if (DocSocket.readyState === WebSocket.OPEN) {
         // Send the encoded awareness update to the WebSocket server
-        webSocket.send(binaryEncoded);
+        DocSocket.send(binaryEncoded);
     } else {
-        console.warn("WebSocket is not open. Update not sent.");
+        console.warn("DocSocket is not open. Update not sent.");
     }
 });
 
+awareness.on('update', ({ added, updated, removed }) => {
 
-// awareness.on('update', ({ added, updated, removed }) => {
-//     const webSocket = new WebSocket(
-//         "ws://" + location.host + "/ws"
-//     );
+    const changedClients = added.concat(updated).concat(removed)
+    let documentAwareness = awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients)
+    const binaryEncoded = fromUint8Array(documentAwareness)
 
-//     webSocket.onopen = (event) => {
-//         webSocket.send("ping")
-//     };
-//     const changedClients = added.concat(updated).concat(removed)
-//     let body = awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients)
-//     // fetch('/awareness', { method: 'POST', body });
-// })
+    if (AwarenessSocket.readyState === WebSocket.OPEN) {
+        // Send the encoded awareness update to the WebSocket server
+        AwarenessSocket.send(binaryEncoded);
+    } else {
+        console.warn("AwarenessSocket is not open. Update not sent.");
+    }
+
+})
 
 
 // const AwarenessSource = new EventSource('/awareness');

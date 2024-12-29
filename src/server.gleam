@@ -141,7 +141,7 @@
 //   }
 // }
 import actors/websocket_actor
-import artifacts/pubsub
+import artifacts/pubsub.{type Channel, Awareness, Doc}
 
 import chip
 import gleam/bytes_tree
@@ -174,8 +174,11 @@ pub fn main() {
           )
           Ok(new_response(200, index))
         }
-        ["ws"] -> {
-          Ok(websocket_actor.start(request, pubsub))
+        ["doc"] -> {
+          Ok(websocket_actor.start(request, pubsub, Doc))
+        }
+        ["awareness"] -> {
+          Ok(websocket_actor.start(request, pubsub, Awareness))
         }
         _ -> {
           new_response(404, "Not found") |> Ok

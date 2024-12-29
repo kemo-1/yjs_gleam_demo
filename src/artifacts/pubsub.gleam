@@ -3,6 +3,11 @@ import gleam/erlang/process
 import gleam/list
 import gleam/otp/supervisor
 
+pub type Channel {
+  Doc
+  Awareness
+}
+
 pub type PubSub(message, channel) =
   chip.Registry(message, channel)
 
