@@ -30,25 +30,25 @@ let provider = new IndexeddbPersistence(document_name, yDoc)
 provider.awareness = awareness
 
 // Create and maintain a persistent WebSocket connection
-const DocSocket = new WebSocket("ws://" + location.host + "/doc");
-const AwarenessSocket = new WebSocket("ws://" + location.host + "/awareness");
+const DocSocket = new WebSocket("wss://" + location.host + "/doc");
+const AwarenessSocket = new WebSocket("wss://" + location.host + "/awareness");
 
 // Event listener for WebSocket open event
 DocSocket.onopen = (event) => {
-    console.log("DocSocket connection established");
+    // console.log("DocSocket connection established");
 };
 AwarenessSocket.onopen = (event) => {
-    console.log("AwarenessSocket connection established");
+    // console.log("AwarenessSocket connection established");
 };
 DocSocket.onmessage = function (event) {
-    console.log(event.data + "DocSocket message recived");
+    // console.log(event.data + "DocSocket message recived");
 
     const binaryEncoded = toUint8Array(event.data)
     //@ts-ignore
     Y.applyUpdate(yDoc, binaryEncoded)
 };
 AwarenessSocket.onmessage = function (event) {
-    console.log(event.data + "AwarenessSocket message recived");
+    // console.log(event.data + "AwarenessSocket message recived");
 
     const binaryEncoded = toUint8Array(event.data)
     //@ts-ignore
@@ -58,18 +58,18 @@ AwarenessSocket.onmessage = function (event) {
 };
 // Event listener for WebSocket error event
 DocSocket.onerror = (error) => {
-    console.error("DocSocket error:", error);
+    // console.error("DocSocket error:", error);
 };
 AwarenessSocket.onerror = (error) => {
-    console.error("AwarenessSocket error:", error);
+    // console.error("AwarenessSocket error:", error);
 };
 
 // Event listener for WebSocket close event
 DocSocket.onclose = (event) => {
-    console.log("DocSocket connection closed:", event);
+    // console.log("DocSocket connection closed:", event);
 };
 AwarenessSocket.onclose = (event) => {
-    console.log("AwarenessSocket connection closed:", event);
+    // console.log("AwarenessSocket connection closed:", event);
 };
 
 // Set up the awareness update listener
