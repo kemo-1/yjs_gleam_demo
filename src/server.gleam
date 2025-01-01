@@ -209,7 +209,22 @@ pub fn main() {
 
   // io.print(object.0 <> ", " <> object.1)
   // "Hello, world!"
-  let assert Ok(table) = uset.new("doc", 1, bravo.Public)
+  // let assert Ok(table) = uset.new("doc", bravo.Public)
+  let table = case
+    uset.file2tab(
+      "database/db.ets",
+      True,
+      fn(table) { table |> dynamic.string },
+      fn(table) { table |> dynamic.string },
+    )
+  {
+    Ok(table) -> table
+    Error(_) -> {
+      let assert Ok(table) = uset.new("doc", bravo.Public)
+      table
+    }
+  }
+  // let _ = uset.insert(table, "doc", "")
   let assert Ok(pubsub) = pubsub.start()
   let assert Ok(_) =
     mist.new(fn(request) {

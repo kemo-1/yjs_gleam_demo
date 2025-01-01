@@ -24,17 +24,17 @@ pub type Event {
 
 pub opaque type WebsocketActorState {
   WebsocketActorState(
-    ws_subject: Subject(chip.Message(CustomWebsocketMessage, Channel)),
+    pubsub: Subject(chip.Message(CustomWebsocketMessage, Channel)),
     channel: Channel,
-    table: Option(USet(#(String, String))),
+    table: Option(USet(String, String)),
   )
 }
 
 pub fn start(
   req: Request(Connection),
-  pubsub,
+  pubsub: Subject(chip.Message(CustomWebsocketMessage, Channel)),
   channel: Channel,
-  table: Option(USet(#(String, String))),
+  table: Option(USet(String, String)),
 ) -> Response(ResponseData) {
   mist.websocket(
     request: req,
@@ -43,17 +43,20 @@ pub fn start(
       let ws_subject = process.new_subject()
       let new_selector =
         process.new_selector()
-        |> process.selecting(ws_subject, function.identity)
+        |> process.selecting(ws_subject, fn(x) { x })
       subscribe(pubsub, channel, ws_subject)
-      let state = WebsocketActorState(ws_subject: pubsub, channel:, table:)
+      let state = WebsocketActorState(pubsub:, channel: channel, table: table)
 
       case table {
         Some(doc_table) -> {
           case uset.lookup(doc_table, "doc") {
-            Error(_) -> Nil
-            Ok(doc_table) -> {
-              let #(_, doc) = doc_table
-              send_client_text(connection, doc)
+            Error(err) -> {
+              io.debug(err)
+              io.println_error("Error:  document couldn't be found")
+            }
+            Ok(doc_value) -> {
+              // let #(_, value) = doc_value
+              send_client_text(connection, doc_value)
             }
           }
         }
@@ -62,10 +65,7 @@ pub fn start(
 
       #(state, Some(new_selector))
     },
-    on_close: fn(_state) {
-      io.println("A connection was closed")
-      Nil
-    },
+    on_close: fn(_state) { io.println("A connection was closed") },
     handler: handle_message,
   )
 }
@@ -79,23 +79,42 @@ fn handle_message(
     Custom(message) ->
       case message {
         Connect(_subject) -> {
-          state |> actor.continue
+          actor.continue(state)
         }
         SendToAll(message) -> {
           case state.table {
-            Some(table) ->
-              case uset.insert(table, [#("doc", message)]) {
-                True -> {
-                  io.println("document have been saved in memory")
+            Some(table) -> {
+              case uset.insert(table, "doc", message) {
+                Ok(_) -> {
+                  case
+                    uset.tab2file(table, "database/db.ets", True, True, True)
+                  {
+                    Ok(_) ->
+                      io.println("document has been saved to file sucessfully")
+                    Error(_) -> {
+                      io.println(
+                        "document couldn't be saved to file sucessfully",
+                      )
+                    }
+                  }
+                  io.println("document has been saved in memory")
+                  send_client_text(connection, message)
+                  actor.continue(state)
                 }
-                _ -> Nil
+                Error(err) -> {
+                  io.debug(err)
+                  io.println("document couldn't be saved to file")
+
+                  // send_client_text(connection, message)
+                  actor.continue(state)
+                }
               }
-            None -> Nil
+            }
+            None -> {
+              send_client_text(connection, message)
+              actor.continue(state)
+            }
           }
-
-          send_client_text(connection, message)
-
-          state |> actor.continue
         }
         Disconnect -> {
           Stop(Normal)
@@ -103,9 +122,8 @@ fn handle_message(
       }
 
     Text(value) -> {
-      publish(state.ws_subject, state.channel, SendToAll(message: value))
-
-      state |> actor.continue
+      publish(state.pubsub, state.channel, SendToAll(value))
+      actor.continue(state)
     }
     _ -> {
       Stop(Normal)
@@ -113,8 +131,7 @@ fn handle_message(
   }
 }
 
-fn send_client_text(connection: WebsocketConnection, value: String) {
-  let assert Ok(_) = mist.send_text_frame(connection, value)
-
+fn send_client_text(connection: WebsocketConnection, value: String) -> Nil {
+  let _ = mist.send_text_frame(connection, value)
   Nil
 }

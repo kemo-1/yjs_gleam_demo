@@ -21,7 +21,8 @@ gleam_erlang = ">= 0.33.0 and < 1.0.0"
 gleam_stdlib = ">= 0.48.0 and < 1.0.0"
 chip = ">= 1.1.1 and < 2.0.0"
 decode = ">= 1.1.0 and < 2.0.0"
-bravo = ">= 4.0.1 and < 5.0.0"
+# bravo = ">= 4.0.1 and < 5.0.0"
+bravo =   { path = "./packages/bravo" }
 
 
 [dev-dependencies]

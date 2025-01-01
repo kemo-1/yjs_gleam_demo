@@ -2,7 +2,7 @@
 # You typically do not need to edit this file
 
 packages = [
-  { name = "bravo", version = "4.0.1", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_stdlib"], otp_app = "bravo", source = "hex", outer_checksum = "D450DCD5A896ADDE442A93A7D6B5B2785374579A35416819E29E024887C2A872" },
+  { name = "bravo", version = "0.0.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_stdlib"], source = "local", path = "packages/bravo" },
   { name = "chip", version = "1.1.1", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_otp", "gleam_stdlib", "lamb"], otp_app = "chip", source = "hex", outer_checksum = "C7CE5BADF6BE8111A55883F2B507DB1529B23E1B7628FF8D6118BAF53D724AA6" },
   { name = "decode", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "decode", source = "hex", outer_checksum = "9FFAD3F60600C6777072C3836B9FD965961D7C76C5D6007918AE0F82C1B21BE3" },
   { name = "filepath", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "filepath", source = "hex", outer_checksum = "67A6D15FB39EEB69DD31F8C145BB5A421790581BD6AA14B33D64D5A55DBD6587" },
@@ -24,7 +24,7 @@ packages = [
 ]
 
 [requirements]
-bravo = { version = ">= 4.0.1 and < 5.0.0" }
+bravo = { path = "./packages/bravo" }
 chip = { version = ">= 1.1.1 and < 2.0.0" }
 decode = { version = ">= 1.1.0 and < 2.0.0" }
 gleam_erlang = { version = ">= 0.33.0 and < 1.0.0" }

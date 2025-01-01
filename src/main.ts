@@ -15,6 +15,9 @@ const MY_COLOR = colours[Math.floor(Math.random() * colours.length)];
 let document_name = "my-document_name"
 const yDoc = new Y.Doc();
 let awareness = new awarenessProtocol.Awareness(yDoc)
+import { Markdown } from 'tiptap-markdown';
+import { WebrtcProvider } from 'y-webrtc';
+import { WebsocketProvider } from 'y-websocket'
 
 render()
 function render() {
@@ -53,8 +56,14 @@ function render() {
     <div class="element"></div>
     `
 
+        // const provider = new WebsocketProvider('wss://mousy-lackadaisical-fuchsia.glitch.me', document_name, yDoc)
 
-        let provider = new IndexeddbPersistence(document_name, yDoc)
+        // provider.on('status', event => {
+        //     console.log(event.status) // logs "connected" or "disconnected"
+        // })
+        //password: 'optional-room-password' })
+        // const provider = new WebrtcProvider(document_name, yDoc, { signaling: ['ws://localhost:8787'] })
+        const provider = new IndexeddbPersistence(document_name, yDoc)
         //@ts-ignore
         provider.awareness = awareness
 
@@ -136,21 +145,32 @@ function render() {
 
         const editor = new Editor({
             element: document.querySelector('.element')!,
-            extensions: [StarterKit.configure({
-                history: false, // Disables default history to use Collaboration's history management
-            }),
+            extensions:
+                [StarterKit.configure({
+                    history: false, // Disables default history to use Collaboration's history management
+                }),
+                Markdown.configure({
+                    html: true,                  // Allow HTML input/output
+                    tightLists: true,            // No <p> inside <li> in markdown output
+                    tightListClass: 'tight',     // Add class to <ul> allowing you to remove <p> margins when tight
+                    bulletListMarker: '-',       // <li> prefix in markdown output
+                    linkify: false,              // Create links from "https://..." text
+                    breaks: true,               // New lines (\n) in markdown input are converted to <br>
+                    transformPastedText: true,  // Allow to paste markdown text in the editor
+                    transformCopiedText: true,  // Copied text is transformed to markdown
+                }),
 
-            Collaboration.configure({
-                document: yDoc, // Configure Y.Doc for collaboration
-            }),
-            CollaborationCursor.configure({
-                provider: provider,
-                user: {
-                    name: localStorage.getItem("name"),
-                    color: MY_COLOR,
-                },
-            }),
-            ],
+                Collaboration.configure({
+                    document: yDoc, // Configure Y.Doc for collaboration
+                }),
+                CollaborationCursor.configure({
+                    provider: provider,
+                    user: {
+                        name: localStorage.getItem("name"),
+                        color: MY_COLOR,
+                    },
+                }),
+                ],
 
         })
 

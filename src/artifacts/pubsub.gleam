@@ -33,6 +33,6 @@ pub fn publish(
   channel: channel,
   message: message,
 ) -> Nil {
-  chip.members(pubsub, channel, 50)
+  chip.members(pubsub, channel, 5000)
   |> list.each(fn(subscriber) { process.send(subscriber, message) })
 }
